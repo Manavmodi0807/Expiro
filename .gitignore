@@ -47,8 +47,8 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
-# Firebase & secrets
-**/google-services.json
-**/GoogleService-Info.plist
-firebase_options.dart
+# Secrets & private credentials
 *.env
+*-service-account*.json
+service-account*.json
+*.pem
