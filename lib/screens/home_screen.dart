@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product_filter_model.dart';
 import '../models/product_model.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/product_service.dart';
 import 'documents/product_documents_screen.dart';
 import 'products/product_form_screen.dart';
@@ -95,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed == true && mounted) {
       try {
         await _productService.deleteProduct(product.id);
+        await NotificationService().cancelProductReminders(product.id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

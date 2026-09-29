@@ -4,6 +4,7 @@ import 'package:digital_warranty_vault/models/product_filter_model.dart';
 import 'package:digital_warranty_vault/models/product_model.dart';
 import 'package:digital_warranty_vault/services/auth_service.dart';
 import 'package:digital_warranty_vault/services/document_service.dart';
+import 'package:digital_warranty_vault/services/notification_service.dart';
 
 void main() {
   group('AuthService error message tests', () {
@@ -220,6 +221,87 @@ void main() {
       );
       final results = filter.apply(sampleProducts);
       expect(results.isEmpty, isTrue);
+    });
+  });
+
+  group('NotificationService & Reminder Tests', () {
+    final expiryDate = DateTime(2026, 12, 31);
+
+    test('30-day reminder date calculation is exact', () {
+      final reminder = NotificationService.calculateReminderDateTime(expiryDate, 30);
+      expect(reminder.year, 2026);
+      expect(reminder.month, 12);
+      expect(reminder.day, 1);
+      expect(reminder.hour, 9);
+      expect(reminder.minute, 0);
+    });
+
+    test('15-day reminder date calculation is exact', () {
+      final reminder = NotificationService.calculateReminderDateTime(expiryDate, 15);
+      expect(reminder.year, 2026);
+      expect(reminder.month, 12);
+      expect(reminder.day, 16);
+      expect(reminder.hour, 9);
+      expect(reminder.minute, 0);
+    });
+
+    test('7-day reminder date calculation is exact', () {
+      final reminder = NotificationService.calculateReminderDateTime(expiryDate, 7);
+      expect(reminder.year, 2026);
+      expect(reminder.month, 12);
+      expect(reminder.day, 24);
+      expect(reminder.hour, 9);
+      expect(reminder.minute, 0);
+    });
+
+    test('Future reminder is approved for scheduling', () {
+      final referenceNow = DateTime(2026, 10, 1, 8, 0);
+      final reminderTime = NotificationService.calculateReminderDateTime(expiryDate, 30); // 2026-12-01
+      final shouldSchedule = NotificationService.shouldScheduleReminder(
+        reminderDateTime: reminderTime,
+        referenceNow: referenceNow,
+        expiryDate: expiryDate,
+      );
+      expect(shouldSchedule, isTrue);
+    });
+
+    test('Past reminder is not scheduled', () {
+      final referenceNow = DateTime(2026, 12, 10, 10, 0);
+      final reminderTime = NotificationService.calculateReminderDateTime(expiryDate, 30); // 2026-12-01 (in the past)
+      final shouldSchedule = NotificationService.shouldScheduleReminder(
+        reminderDateTime: reminderTime,
+        referenceNow: referenceNow,
+        expiryDate: expiryDate,
+      );
+      expect(shouldSchedule, isFalse);
+    });
+
+    test('Expired warranty does not schedule reminders', () {
+      final pastExpiry = DateTime(2026, 5, 1);
+      final referenceNow = DateTime(2026, 10, 1);
+      final reminderTime = NotificationService.calculateReminderDateTime(pastExpiry, 7);
+      final shouldSchedule = NotificationService.shouldScheduleReminder(
+        reminderDateTime: reminderTime,
+        referenceNow: referenceNow,
+        expiryDate: pastExpiry,
+      );
+      expect(shouldSchedule, isFalse);
+    });
+
+    test('Notification ID generation is deterministic and non-negative', () {
+      final id1 = NotificationService.generateNotificationId('prod_123', 30);
+      final id2 = NotificationService.generateNotificationId('prod_123', 30);
+      expect(id1, id2);
+      expect(id1 >= 0, isTrue);
+    });
+
+    test('Different products and reminder intervals generate distinct notification IDs', () {
+      final id30 = NotificationService.generateNotificationId('prod_123', 30);
+      final id15 = NotificationService.generateNotificationId('prod_123', 15);
+      final idOtherProduct = NotificationService.generateNotificationId('prod_456', 30);
+
+      expect(id30, isNot(equals(id15)));
+      expect(id30, isNot(equals(idOtherProduct)));
     });
   });
 }

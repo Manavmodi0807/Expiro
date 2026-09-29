@@ -26,14 +26,15 @@ class ProductService {
     });
   }
 
-  Future<void> addProduct(Product product) async {
+  Future<String> addProduct(Product product) async {
     final userId = currentUserId;
     if (userId == null) {
       throw Exception('User is not authenticated.');
     }
 
     final collection = _userProductsCollection(userId);
-    await collection.add(product.toFirestore(isNew: true));
+    final docRef = await collection.add(product.toFirestore(isNew: true));
+    return docRef.id;
   }
 
   Future<void> updateProduct(Product product) async {

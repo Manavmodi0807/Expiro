@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/product_model.dart';
+import '../../services/notification_service.dart';
 import '../../services/product_service.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late String _selectedCategory;
   late DateTime _selectedPurchaseDate;
   late int _durationMonths;
+  final Set<int> _selectedReminderIntervals = {30, 15, 7};
 
   bool _isSaving = false;
 
@@ -113,6 +115,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
 
     try {
+      // Request notification permission if any reminder is selected
+      if (_selectedReminderIntervals.isNotEmpty) {
+        await NotificationService().requestNotificationPermissions();
+      }
+
       final expiryDate = _calculatedExpiryDate;
       final notes = _notesController.text.trim();
 
@@ -127,6 +134,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           notes: notes.isEmpty ? null : notes,
         );
         await _productService.updateProduct(updated);
+
+        // Reschedule local reminders
+        await NotificationService().rescheduleProductReminders(
+          updated,
+          reminderIntervals: _selectedReminderIntervals.toList(),
+        );
       } else {
         final newProduct = Product(
           id: '',
@@ -138,7 +151,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           warrantyExpiryDate: expiryDate,
           notes: notes.isEmpty ? null : notes,
         );
-        await _productService.addProduct(newProduct);
+        final newProductId = await _productService.addProduct(newProduct);
+        final savedProduct = newProduct.copyWith(id: newProductId);
+
+        // Schedule local reminders
+        await NotificationService().scheduleProductReminders(
+          savedProduct,
+          reminderIntervals: _selectedReminderIntervals.toList(),
+        );
       }
 
       if (mounted) {
@@ -412,6 +432,60 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 16),
+
+                // Expiry Reminders
+                Text(
+                  'Warranty Expiry Reminders',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  children: [
+                    FilterChip(
+                      label: const Text('30 Days Before'),
+                      selected: _selectedReminderIntervals.contains(30),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedReminderIntervals.add(30);
+                          } else {
+                            _selectedReminderIntervals.remove(30);
+                          }
+                        });
+                      },
+                    ),
+                    FilterChip(
+                      label: const Text('15 Days Before'),
+                      selected: _selectedReminderIntervals.contains(15),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedReminderIntervals.add(15);
+                          } else {
+                            _selectedReminderIntervals.remove(15);
+                          }
+                        });
+                      },
+                    ),
+                    FilterChip(
+                      label: const Text('7 Days Before'),
+                      selected: _selectedReminderIntervals.contains(7),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedReminderIntervals.add(7);
+                          } else {
+                            _selectedReminderIntervals.remove(7);
+                          }
+                        });
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
