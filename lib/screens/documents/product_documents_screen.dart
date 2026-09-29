@@ -3,6 +3,7 @@ import '../../models/product_document_model.dart';
 import '../../models/product_model.dart';
 import '../../services/document_service.dart';
 import 'document_viewer_screen.dart';
+import 'ocr_scan_screen.dart';
 
 class ProductDocumentsScreen extends StatefulWidget {
   final Product product;
@@ -68,6 +69,21 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.document_scanner_outlined),
+                  ),
+                  title: const Text('Scan & Extract Text (OCR)'),
+                  subtitle: const Text('Extract readable text from a bill or warranty card'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const OcrScanScreen(),
+                      ),
+                    );
+                  },
+                ),
                 ListTile(
                   leading: const CircleAvatar(
                     child: Icon(Icons.camera_alt_outlined),
@@ -171,6 +187,19 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${product.productName} Documents'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.document_scanner_outlined),
+            tooltip: 'Scan Document (OCR)',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OcrScanScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

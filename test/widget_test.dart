@@ -5,6 +5,7 @@ import 'package:digital_warranty_vault/models/product_model.dart';
 import 'package:digital_warranty_vault/services/auth_service.dart';
 import 'package:digital_warranty_vault/services/document_service.dart';
 import 'package:digital_warranty_vault/services/notification_service.dart';
+import 'package:digital_warranty_vault/services/ocr_service.dart';
 
 void main() {
   group('AuthService error message tests', () {
@@ -304,4 +305,72 @@ void main() {
       expect(id30, isNot(equals(idOtherProduct)));
     });
   });
+
+  group('OcrService & Parsing Tests', () {
+    test('Empty text returns empty candidate fields', () {
+      final fields = OcrService.extractCandidateFields('');
+      expect(fields.hasAnyField, isFalse);
+      expect(fields.productName, isNull);
+      expect(fields.brand, isNull);
+      expect(fields.purchaseDate, isNull);
+      expect(fields.warrantyDurationMonths, isNull);
+    });
+
+    test('Extracts labeled product name and brand', () {
+      const sampleText = '''
+INVOICE #1042
+Product Name: Sony WH-1000XM5
+Brand: Sony
+Date: 2026-05-15
+Warranty Period: 2 years
+''';
+      final fields = OcrService.extractCandidateFields(sampleText);
+      expect(fields.productName, 'Sony WH-1000XM5');
+      expect(fields.brand, 'Sony');
+      expect(fields.purchaseDate, DateTime(2026, 5, 15));
+      expect(fields.warrantyDurationMonths, 24);
+      expect(fields.hasAnyField, isTrue);
+    });
+
+    test('Extracts DD/MM/YYYY date and month duration', () {
+      const sampleText = '''
+RETAIL RECEIPT
+Item: Dell XPS 15
+Manufacturer: Dell
+Purchase Date: 12/04/2026
+Warranty: 12 months
+''';
+      final fields = OcrService.extractCandidateFields(sampleText);
+      expect(fields.productName, 'Dell XPS 15');
+      expect(fields.brand, 'Dell');
+      expect(fields.purchaseDate, DateTime(2026, 4, 12));
+      expect(fields.warrantyDurationMonths, 12);
+    });
+
+    test('Extracts partial/unlabeled fields safely without guessing', () {
+      const sampleText = '''
+STORE CASH MEMO
+Some random text
+Invoice date 2026/08/20
+Thank you for shopping!
+''';
+      final fields = OcrService.extractCandidateFields(sampleText);
+      expect(fields.productName, isNull);
+      expect(fields.brand, isNull);
+      expect(fields.purchaseDate, DateTime(2026, 8, 20));
+      expect(fields.warrantyDurationMonths, isNull);
+    });
+
+    test('OcrService error translator returns readable user messages', () {
+      final msg1 = OcrService.getReadableErrorMessage(const OcrException('Custom error'));
+      expect(msg1, 'Custom error');
+
+      final msg2 = OcrService.getReadableErrorMessage(Exception('File does not exist'));
+      expect(msg2, 'Selected document image file could not be found.');
+
+      final msg3 = OcrService.getReadableErrorMessage(Exception('Unknown OCR error'));
+      expect(msg3, 'Unable to read this document. Please try a clearer image.');
+    });
+  });
 }
+

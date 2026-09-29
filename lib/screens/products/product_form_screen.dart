@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/product_model.dart';
 import '../../services/notification_service.dart';
+import '../../services/ocr_service.dart';
 import '../../services/product_service.dart';
+import '../documents/ocr_scan_screen.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final Product? productToEdit;
@@ -103,6 +105,50 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       setState(() {
         _selectedPurchaseDate = picked;
       });
+    }
+  }
+
+  Future<void> _scanDocumentWithOcr() async {
+    final fields = await Navigator.of(context).push<OcrCandidateFields>(
+      MaterialPageRoute(
+        builder: (context) => const OcrScanScreen(returnCandidateFields: true),
+      ),
+    );
+
+    if (fields != null && mounted) {
+      int populatedCount = 0;
+      setState(() {
+        if (fields.productName != null && fields.productName!.isNotEmpty) {
+          _nameController.text = fields.productName!;
+          populatedCount++;
+        }
+        if (fields.brand != null && fields.brand!.isNotEmpty) {
+          _brandController.text = fields.brand!;
+          populatedCount++;
+        }
+        if (fields.purchaseDate != null) {
+          _selectedPurchaseDate = fields.purchaseDate!;
+          populatedCount++;
+        }
+        if (fields.warrantyDurationMonths != null && fields.warrantyDurationMonths! > 0) {
+          _setDuration(fields.warrantyDurationMonths!);
+          populatedCount++;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              populatedCount > 0
+                  ? 'Populated $populatedCount field(s) from document. Please review and verify.'
+                  : 'Document scanned. Please review details before saving.',
+            ),
+            backgroundColor: Colors.blue.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -215,6 +261,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Product' : 'Add Product'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.document_scanner_outlined),
+            tooltip: 'Autofill with OCR',
+            onPressed: _scanDocumentWithOcr,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -224,6 +277,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Quick Scan Document banner/button
+                OutlinedButton.icon(
+                  onPressed: _scanDocumentWithOcr,
+                  icon: const Icon(Icons.document_scanner_outlined),
+                  label: const Text('Scan Bill / Invoice with OCR'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Product Name
                 TextFormField(
                   controller: _nameController,
