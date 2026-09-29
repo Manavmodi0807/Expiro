@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
+import 'documents/product_documents_screen.dart';
 import 'products/product_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -107,6 +108,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed == true) {
       await _authService.signOut();
     }
+  }
+
+  void _openDocuments(Product product) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProductDocumentsScreen(product: product),
+      ),
+    );
   }
 
   @override
@@ -241,140 +250,168 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header Row: Product Name & More Menu
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    product.productName,
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _openDocuments(product),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header Row: Product Name & More Menu
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.productName,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      product.brand.isNotEmpty
+                                          ? '${product.brand} • ${product.category}'
+                                          : product.category,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert),
+                                tooltip: 'Product Options',
+                                onSelected: (value) {
+                                  if (value == 'docs') {
+                                    _openDocuments(product);
+                                  } else if (value == 'edit') {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductFormScreen(
+                                          productToEdit: product,
+                                        ),
+                                      ),
+                                    );
+                                  } else if (value == 'delete') {
+                                    _confirmDelete(product);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'docs',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.folder_open_outlined, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Documents / Bills'),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    product.brand.isNotEmpty
-                                        ? '${product.brand} • ${product.category}'
-                                        : product.category,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_outlined, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Delete', style: TextStyle(color: Colors.red)),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              tooltip: 'Product Options',
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => ProductFormScreen(
-                                        productToEdit: product,
-                                      ),
+                            ],
+                          ),
+                          const Divider(height: 20),
+
+                          // Dates & Status Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Purchased: ${_formatDate(product.purchaseDate)}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
-                                  );
-                                } else if (value == 'delete') {
-                                  _confirmDelete(product);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit_outlined, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Edit'),
-                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Expires: ${_formatDate(product.warrantyExpiryDate)}',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: statusColor.withValues(alpha: 0.4),
                                   ),
                                 ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Delete', style: TextStyle(color: Colors.red)),
-                                    ],
+                                child: Text(
+                                  status.label,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ],
+                              ),
+                            ],
+                          ),
+
+                          // Optional Notes display if present
+                          if (product.notes != null && product.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              'Notes: ${product.notes}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                        ),
-                        const Divider(height: 20),
 
-                        // Dates & Status Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Purchased: ${_formatDate(product.purchaseDate)}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Expires: ${_formatDate(product.warrantyExpiryDate)}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _openDocuments(product),
+                                icon: const Icon(Icons.description_outlined, size: 18),
+                                label: const Text('Manage Documents'),
                               ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: statusColor.withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: Text(
-                                status.label,
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Optional Notes display if present
-                        if (product.notes != null && product.notes!.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            'Notes: ${product.notes}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            ],
                           ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );

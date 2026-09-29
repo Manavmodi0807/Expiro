@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:digital_warranty_vault/models/product_document_model.dart';
 import 'package:digital_warranty_vault/models/product_model.dart';
 import 'package:digital_warranty_vault/services/auth_service.dart';
+import 'package:digital_warranty_vault/services/document_service.dart';
 
 void main() {
   group('AuthService error message tests', () {
@@ -53,6 +55,43 @@ void main() {
       final status = Product.calculateWarrantyStatus(futureExpiry, referenceToday);
       expect(status, WarrantyStatus.active);
       expect(status.label, 'Active');
+    });
+  });
+
+  group('ProductDocument Model Tests', () {
+    test('Correctly identifies PDF document', () {
+      final doc = ProductDocument(
+        id: 'doc_1',
+        fileName: 'invoice.pdf',
+        documentType: 'Bill / Invoice',
+        storagePath: 'users/u1/products/p1/documents/doc_1',
+        downloadUrl: 'https://example.com/invoice.pdf',
+        contentType: 'application/pdf',
+        fileSizeBytes: 102400,
+      );
+
+      expect(doc.isPdf, isTrue);
+      expect(doc.isImage, isFalse);
+    });
+
+    test('Correctly identifies Image document', () {
+      final doc = ProductDocument(
+        id: 'doc_2',
+        fileName: 'receipt.jpg',
+        documentType: 'Purchase Receipt',
+        storagePath: 'users/u1/products/p1/documents/doc_2',
+        downloadUrl: 'https://example.com/receipt.jpg',
+        contentType: 'image/jpeg',
+        fileSizeBytes: 204800,
+      );
+
+      expect(doc.isImage, isTrue);
+      expect(doc.isPdf, isFalse);
+    });
+
+    test('DocumentService error handler translates codes safely', () {
+      final msg = DocumentService.getReadableErrorMessage(Exception('generic'));
+      expect(msg, contains('Exception'));
     });
   });
 }
