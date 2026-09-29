@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"digital-warranty-vault-66a07","appId":"1:976491287924:android:e4e73082db28c70d0fc821","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"digital-warranty-vault-66a07","configurations":{"android":"1:976491287924:android:e4e73082db28c70d0fc821"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "digital-warranty-vault-66a07",
+          "appId": "1:976491287924:android:e4e73082db28c70d0fc821",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "digital-warranty-vault-66a07",
+          "configurations": {
+            "android": "1:976491287924:android:e4e73082db28c70d0fc821"
+          }
+        }
+      }
+    }
+  }
+}
