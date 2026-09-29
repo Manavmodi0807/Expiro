@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:digital_warranty_vault/models/product_document_model.dart';
+import 'package:digital_warranty_vault/models/product_filter_model.dart';
 import 'package:digital_warranty_vault/models/product_model.dart';
 import 'package:digital_warranty_vault/services/auth_service.dart';
 import 'package:digital_warranty_vault/services/document_service.dart';
@@ -92,6 +93,133 @@ void main() {
     test('DocumentService error handler translates codes safely', () {
       final msg = DocumentService.getReadableErrorMessage(Exception('generic'));
       expect(msg, contains('Exception'));
+    });
+  });
+
+  group('ProductFilter Model & Search Tests', () {
+    final sampleProducts = [
+      Product(
+        id: 'p1',
+        productName: 'Samsung Galaxy S24',
+        category: 'Electronics',
+        brand: 'Samsung',
+        purchaseDate: DateTime(2026, 1, 10),
+        warrantyDurationMonths: 24,
+        warrantyExpiryDate: DateTime(2028, 1, 10),
+      ),
+      Product(
+        id: 'p2',
+        productName: 'MacBook Pro M3',
+        category: 'Computing',
+        brand: 'Apple',
+        purchaseDate: DateTime(2025, 10, 5),
+        warrantyDurationMonths: 12,
+        warrantyExpiryDate: DateTime(2026, 10, 5), // Expiring soon relative to late Sept 2026
+      ),
+      Product(
+        id: 'p3',
+        productName: 'LG Smart Refrigerator',
+        category: 'Appliances',
+        brand: 'LG',
+        purchaseDate: DateTime(2024, 1, 15),
+        warrantyDurationMonths: 12,
+        warrantyExpiryDate: DateTime(2025, 1, 15), // Expired
+      ),
+    ];
+
+    test('Inactive filter returns all products', () {
+      const filter = ProductFilter();
+      expect(filter.isActive, isFalse);
+      expect(filter.activeFilterCount, 0);
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 3);
+    });
+
+    test('Search by product name matches case-insensitively and partially', () {
+      const filter = ProductFilter(searchQuery: 'galaxy');
+      expect(filter.isActive, isTrue);
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.productName, 'Samsung Galaxy S24');
+    });
+
+    test('Search by brand matches correctly', () {
+      const filter = ProductFilter(searchQuery: 'app');
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.brand, 'Apple');
+    });
+
+    test('Filter by Category works', () {
+      const filter = ProductFilter(category: 'Appliances');
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p3');
+    });
+
+    test('Filter by Brand works', () {
+      const filter = ProductFilter(brand: 'Samsung');
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p1');
+    });
+
+    test('Filter by Purchase Date range (inclusive) works', () {
+      final filter = ProductFilter(
+        purchaseDateFrom: DateTime(2025, 1, 1),
+        purchaseDateTo: DateTime(2025, 12, 31),
+      );
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p2');
+    });
+
+    test('Filter by Purchase Date From only works', () {
+      final filter = ProductFilter(
+        purchaseDateFrom: DateTime(2026, 1, 1),
+      );
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p1');
+    });
+
+    test('Filter by Purchase Date To only works', () {
+      final filter = ProductFilter(
+        purchaseDateTo: DateTime(2024, 12, 31),
+      );
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p3');
+    });
+
+    test('Filter by Warranty Status works', () {
+      const filter = ProductFilter(warrantyStatus: WarrantyStatus.expired);
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p3');
+    });
+
+    test('Combined filters work together', () {
+      final filter = ProductFilter(
+        searchQuery: 'samsung',
+        category: 'Electronics',
+        brand: 'Samsung',
+        warrantyStatus: WarrantyStatus.active,
+        purchaseDateFrom: DateTime(2026, 1, 1),
+      );
+      expect(filter.activeFilterCount, 4);
+      final results = filter.apply(sampleProducts);
+      expect(results.length, 1);
+      expect(results.first.id, 'p1');
+    });
+
+    test('Combined filters return empty list when no product matches all criteria', () {
+      const filter = ProductFilter(
+        searchQuery: 'samsung',
+        category: 'Appliances', // Mismatched category for Samsung Galaxy S24
+      );
+      final results = filter.apply(sampleProducts);
+      expect(results.isEmpty, isTrue);
     });
   });
 }
