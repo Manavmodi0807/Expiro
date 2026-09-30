@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/product_document_model.dart';
+import '../../theme/app_theme.dart';
 
 class DocumentViewerScreen extends StatefulWidget {
   final ProductDocument document;
@@ -75,25 +76,32 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final doc = widget.document;
 
     return Scaffold(
+      backgroundColor: Colors.black87,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: AppTheme.textPrimary,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               doc.fileName,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             Text(
               '${widget.productName} • ${doc.documentType}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -120,6 +128,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
               if (loadingProgress == null) return child;
               return Center(
                 child: CircularProgressIndicator(
+                  color: Colors.white,
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
                           loadingProgress.expectedTotalBytes!
@@ -131,20 +140,33 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.broken_image_rounded,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Failed to load image document',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.broken_image_rounded,
+                          size: 48,
+                          color: Color(0xFFDC2626),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Failed to load image document',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'The image file could not be fetched from storage.',
+                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -160,9 +182,12 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
+              CircularProgressIndicator(color: Colors.white),
               SizedBox(height: 16),
-              Text('Loading PDF document...'),
+              Text(
+                'Loading PDF document...',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         );
@@ -172,27 +197,34 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.picture_as_pdf_outlined,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _pdfError ?? 'Failed to display PDF',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: _loadPdf,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.picture_as_pdf_outlined,
+                    size: 48,
+                    color: Color(0xFFDC2626),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _pdfError ?? 'Failed to display PDF',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _loadPdf,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -225,17 +257,34 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           ),
           if (_totalPages > 0)
             Positioned(
-              bottom: 16,
-              right: 16,
+              bottom: 20,
+              right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                    ),
+                  ],
                 ),
-                child: Text(
-                  '${_currentPage + 1} / $_totalPages',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.layers_outlined, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Page ${_currentPage + 1} of $_totalPages',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -244,23 +293,32 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     }
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.description_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
+              size: 48,
+              color: AppTheme.primary,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               doc.fileName,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text('Content Type: ${doc.contentType}'),
+            const SizedBox(height: 6),
+            Text(
+              'Content Type: ${doc.contentType}',
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
           ],
         ),
       ),

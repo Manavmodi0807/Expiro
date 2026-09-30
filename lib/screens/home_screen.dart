@@ -4,6 +4,9 @@ import '../models/product_model.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/product_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/empty_state_view.dart';
+import '../widgets/status_badge.dart';
 import 'documents/product_documents_screen.dart';
 import 'products/product_form_screen.dart';
 
@@ -51,17 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${_months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  Color _getStatusColor(WarrantyStatus status) {
-    switch (status) {
-      case WarrantyStatus.active:
-        return Colors.green.shade700;
-      case WarrantyStatus.expiringSoon:
-        return Colors.orange.shade800;
-      case WarrantyStatus.expired:
-        return Colors.red.shade700;
-    }
-  }
-
   void _resetAllFilters() {
     _searchController.clear();
     setState(() {
@@ -73,18 +65,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_outline_rounded, size: 40, color: Color(0xFFDC2626)),
         title: const Text('Delete Product'),
         content: Text(
-          'Are you sure you want to delete "${product.productName}"? This action cannot be undone.',
+          'Are you sure you want to delete "${product.productName}" from your vault? This action cannot be undone.',
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
+              backgroundColor: const Color(0xFFDC2626),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Delete'),
@@ -99,9 +92,16 @@ class _HomeScreenState extends State<HomeScreen> {
         await NotificationService().cancelProductReminders(product.id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Product deleted successfully.'),
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text('Product deleted successfully from vault.'),
+                ],
+              ),
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -113,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
               content: Text(errorMsg),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -124,10 +125,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.logout_rounded, size: 36, color: AppTheme.primary),
         title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out of your vault?'),
+        content: const Text('Are you sure you want to log out of Digital Warranty Vault?'),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
@@ -153,21 +155,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openFilterModal(List<Product> allProducts) async {
-    // Collect available unique categories
     final productCategories = allProducts
         .map((p) => p.category.trim())
         .where((c) => c.isNotEmpty);
     final categorySet = <String>{...Product.defaultCategories, ...productCategories};
     final categories = categorySet.toList()..sort();
 
-    // Collect available unique brands
     final brandSet = allProducts
         .map((p) => p.brand.trim())
         .where((b) => b.isNotEmpty)
         .toSet();
     final brands = brandSet.toList()..sort();
 
-    // Temporary local filter state in modal
     String? tempCategory = _filter.category;
     String? tempBrand = _filter.brand;
     DateTime? tempFrom = _filter.purchaseDateFrom;
@@ -177,21 +176,15 @@ class _HomeScreenState extends State<HomeScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final theme = Theme.of(context);
-            final colorScheme = theme.colorScheme;
-
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.only(
                   left: 20.0,
                   right: 20.0,
-                  top: 20.0,
+                  top: 8.0,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 20.0,
                 ),
                 child: SingleChildScrollView(
@@ -199,18 +192,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
+                          const Row(
                             children: [
-                              Icon(Icons.tune_rounded, color: colorScheme.primary),
-                              const SizedBox(width: 8),
+                              Icon(Icons.tune_rounded, color: AppTheme.primary, size: 22),
+                              SizedBox(width: 8),
                               Text(
-                                'Filter Products',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                'Filter Vault Products',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
                                 ),
                               ),
                             ],
@@ -229,22 +223,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 8),
                       const Divider(),
-                      const SizedBox(height: 12),
-
-                      // Warranty Status Filter
-                      Text(
+                      const SizedBox(height: 16),
+                      const Text(
                         'Warranty Status',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
+                        runSpacing: 8,
                         children: [
                           ChoiceChip(
-                            label: const Text('All'),
+                            label: const Text('All Statuses'),
                             selected: tempStatus == null,
                             onSelected: (selected) {
                               if (selected) {
@@ -265,25 +261,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           }),
                         ],
                       ),
-                      const SizedBox(height: 18),
-
-                      // Category Filter
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Category',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       DropdownButtonFormField<String?>(
                         initialValue: tempCategory,
                         isExpanded: true,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'All Categories',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          prefixIcon: Icon(Icons.category_outlined, size: 20),
                         ),
                         items: [
                           const DropdownMenuItem<String?>(
@@ -299,25 +292,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           setModalState(() => tempCategory = val);
                         },
                       ),
-                      const SizedBox(height: 18),
-
-                      // Brand Filter
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Brand',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       DropdownButtonFormField<String?>(
                         initialValue: tempBrand,
                         isExpanded: true,
                         decoration: InputDecoration(
                           hintText: brands.isEmpty ? 'No brands recorded' : 'All Brands',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          prefixIcon: const Icon(Icons.branding_watermark_outlined, size: 20),
                         ),
                         items: [
                           const DropdownMenuItem<String?>(
@@ -335,19 +325,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 setModalState(() => tempBrand = val);
                               },
                       ),
-                      const SizedBox(height: 18),
-
-                      // Purchase Date Range Filter
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Purchase Date Range',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
-                          // From Date
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () async {
@@ -364,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: const Icon(Icons.calendar_today_outlined, size: 16),
                               label: Text(
                                 tempFrom != null ? _formatDate(tempFrom!) : 'From Date',
-                                style: const TextStyle(fontSize: 12),
+                                style: const TextStyle(fontSize: 12.5),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -376,7 +365,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () => setModalState(() => tempFrom = null),
                             ),
                           const SizedBox(width: 8),
-                          // To Date
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () async {
@@ -393,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: const Icon(Icons.event_outlined, size: 16),
                               label: Text(
                                 tempTo != null ? _formatDate(tempTo!) : 'To Date',
-                                style: const TextStyle(fontSize: 12),
+                                style: const TextStyle(fontSize: 12.5),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -406,9 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-
-                      // Action Buttons
+                      const SizedBox(height: 28),
                       Row(
                         children: [
                           Expanded(
@@ -448,23 +434,608 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSearchAndFilterBar(List<Product> products) {
+    final filterCount = _filter.activeFilterCount;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderLight),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search products or brands...',
+                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppTheme.textSecondary),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18, color: AppTheme.textSecondary),
+                        onPressed: () => _searchController.clear(),
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                fillColor: Colors.transparent,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Badge(
+          isLabelVisible: filterCount > 0,
+          label: Text('$filterCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: AppTheme.primary,
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openFilterModal(products),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: filterCount > 0 ? AppTheme.primary : AppTheme.borderLight,
+                    width: filterCount > 0 ? 1.5 : 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: filterCount > 0 ? AppTheme.primary : AppTheme.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActiveFilterChips() {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (_filter.searchQuery.trim().isNotEmpty)
+          Chip(
+            avatar: const Icon(Icons.search, size: 14, color: AppTheme.primary),
+            label: Text('"${_filter.searchQuery.trim()}"'),
+            onDeleted: () => _searchController.clear(),
+            deleteIconColor: AppTheme.textSecondary,
+            visualDensity: VisualDensity.compact,
+          ),
+        if (_filter.warrantyStatus != null)
+          Chip(
+            avatar: Icon(
+              AppTheme.getStatusIcon(_filter.warrantyStatus!),
+              size: 14,
+              color: AppTheme.getStatusTextColor(_filter.warrantyStatus!),
+            ),
+            label: Text(_filter.warrantyStatus!.label),
+            onDeleted: () {
+              setState(() {
+                _filter = _filter.copyWith(warrantyStatus: () => null);
+              });
+            },
+            deleteIconColor: AppTheme.textSecondary,
+            visualDensity: VisualDensity.compact,
+          ),
+        if (_filter.category != null)
+          Chip(
+            avatar: Icon(
+              AppTheme.getCategoryIcon(_filter.category!),
+              size: 14,
+              color: AppTheme.primary,
+            ),
+            label: Text(_filter.category!),
+            onDeleted: () {
+              setState(() {
+                _filter = _filter.copyWith(category: () => null);
+              });
+            },
+            deleteIconColor: AppTheme.textSecondary,
+            visualDensity: VisualDensity.compact,
+          ),
+        if (_filter.brand != null)
+          Chip(
+            avatar: const Icon(Icons.branding_watermark_outlined, size: 14, color: AppTheme.primary),
+            label: Text(_filter.brand!),
+            onDeleted: () {
+              setState(() {
+                _filter = _filter.copyWith(brand: () => null);
+              });
+            },
+            deleteIconColor: AppTheme.textSecondary,
+            visualDensity: VisualDensity.compact,
+          ),
+        if (_filter.purchaseDateFrom != null || _filter.purchaseDateTo != null)
+          Chip(
+            avatar: const Icon(Icons.date_range_outlined, size: 14, color: AppTheme.primary),
+            label: Text(
+              _filter.purchaseDateFrom != null && _filter.purchaseDateTo != null
+                  ? '${_formatDate(_filter.purchaseDateFrom!)} - ${_formatDate(_filter.purchaseDateTo!)}'
+                  : _filter.purchaseDateFrom != null
+                      ? 'From ${_formatDate(_filter.purchaseDateFrom!)}'
+                      : 'To ${_formatDate(_filter.purchaseDateTo!)}',
+            ),
+            onDeleted: () {
+              setState(() {
+                _filter = _filter.copyWith(
+                  purchaseDateFrom: () => null,
+                  purchaseDateTo: () => null,
+                );
+              });
+            },
+            deleteIconColor: AppTheme.textSecondary,
+            visualDensity: VisualDensity.compact,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildNoFilterResultsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderLight),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryContainer.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.filter_alt_off_rounded,
+              size: 32,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'No matching products found',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Try adjusting or resetting your search query or filter options.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _resetAllFilters,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Reset All Filters'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryMetrics({
+    required int total,
+    required int active,
+    required int expiring,
+    required int expired,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetricCard(
+            label: 'Active',
+            count: active,
+            icon: Icons.verified_user_rounded,
+            textColor: AppTheme.statusActiveText,
+            bgColor: AppTheme.statusActiveBg,
+            borderColor: AppTheme.statusActiveBorder,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildMetricCard(
+            label: 'Expiring',
+            count: expiring,
+            icon: Icons.warning_amber_rounded,
+            textColor: AppTheme.statusExpiringText,
+            bgColor: AppTheme.statusExpiringBg,
+            borderColor: AppTheme.statusExpiringBorder,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildMetricCard(
+            label: 'Expired',
+            count: expired,
+            icon: Icons.event_busy_rounded,
+            textColor: AppTheme.statusExpiredText,
+            bgColor: AppTheme.statusExpiredBg,
+            borderColor: AppTheme.statusExpiredBorder,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required String label,
+    required int count,
+    required IconData icon,
+    required Color textColor,
+    required Color bgColor,
+    required Color borderColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 10.0),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: textColor.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: textColor, size: 22),
+          const SizedBox(height: 6),
+          Text(
+            '$count',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required int count,
+    required IconData icon,
+    required Color accentColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: accentColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.2,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: accentColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptySectionCard(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderLight),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(Product product) {
+    final status = product.status;
+    final categoryIcon = AppTheme.getCategoryIcon(product.category);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _openDocuments(product),
+          child: Padding(
+            padding: const EdgeInsets.all(14.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryContainer.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        categoryIcon,
+                        size: 22,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.productName,
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            product.brand.isNotEmpty
+                                ? '${product.brand} • ${product.category}'
+                                : product.category,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary, size: 20),
+                      tooltip: 'Product Options',
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      onSelected: (value) {
+                        if (value == 'docs') {
+                          _openDocuments(product);
+                        } else if (value == 'edit') {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ProductFormScreen(
+                                productToEdit: product,
+                              ),
+                            ),
+                          );
+                        } else if (value == 'delete') {
+                          _confirmDelete(product);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'docs',
+                          child: Row(
+                            children: [
+                              Icon(Icons.folder_open_rounded, size: 18, color: AppTheme.primary),
+                              SizedBox(width: 10),
+                              Text('Documents & Bills'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 18, color: AppTheme.textPrimary),
+                              SizedBox(width: 10),
+                              Text('Edit Product'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                              SizedBox(width: 10),
+                              Text('Delete', style: TextStyle(color: Color(0xFFDC2626))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: AppTheme.borderLight),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textMuted),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Purchased: ${_formatDate(product.purchaseDate)}',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.event_available_outlined, size: 13, color: AppTheme.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Expires: ${_formatDate(product.warrantyExpiryDate)}',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    StatusBadge(status: status),
+                  ],
+                ),
+                if (product.notes != null && product.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.scaffoldBackground,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notes_rounded, size: 14, color: AppTheme.textMuted),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            product.notes!,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: AppTheme.textSecondary,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'Digital Warranty Vault',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        titleSpacing: 16,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.shield_rounded,
+                size: 20,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('Digital Warranty Vault'),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded),
+            icon: const Icon(Icons.logout_rounded, size: 22),
             tooltip: 'Log Out',
             onPressed: _handleLogout,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -484,24 +1055,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline_rounded,
-                        size: 56,
-                        color: colorScheme.error,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.error_outline_rounded,
+                          size: 48,
+                          color: Color(0xFFDC2626),
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'Unable to load dashboard',
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: TextStyle(
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         ProductService.getReadableErrorMessage(snapshot.error),
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],
@@ -513,57 +1094,23 @@ class _HomeScreenState extends State<HomeScreen> {
             final products = snapshot.data ?? [];
 
             if (products.isEmpty) {
-              return Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.inventory_2_outlined,
-                        size: 80,
-                        color: colorScheme.primary.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'No Products in Vault',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Keep your product warranties organized and tracked in one secure place.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ProductFormScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Your First Product'),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return EmptyStateView(
+                icon: Icons.inventory_2_outlined,
+                title: 'Your Warranty Vault is Empty',
+                description:
+                    'Store product invoices, calculate warranty expiry dates automatically, and get timely reminders.',
+                actionLabel: 'Add Your First Product',
+                actionIcon: Icons.add_rounded,
+                onAction: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ProductFormScreen(),
+                    ),
+                  );
+                },
               );
             }
 
-            // Products exist in vault. Apply search and filters:
             final filteredProducts = _filter.apply(products);
 
             final activeProducts = products
@@ -578,7 +1125,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 .where((p) => p.status == WarrantyStatus.expired)
                 .toList();
 
-            // Recent products ordered by creation date descending
             final recentProducts = List<Product>.from(products)
               ..sort((a, b) {
                 final dateA = a.createdAt ?? a.purchaseDate;
@@ -591,25 +1137,22 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Search and Filter Bar
-                  _buildSearchAndFilterBar(products, theme, colorScheme),
+                  _buildSearchAndFilterBar(products),
                   const SizedBox(height: 12),
-
-                  // Active Filter Chips
                   if (_filter.isActive) ...[
-                    _buildActiveFilterChips(theme, colorScheme),
-                    const SizedBox(height: 16),
+                    _buildActiveFilterChips(),
+                    const SizedBox(height: 14),
                   ],
-
-                  // If search/filter is active, show the filtered list
                   if (_filter.isActive) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Filtered Results (${filteredProducts.length})',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
                           ),
                         ),
                         TextButton(
@@ -620,93 +1163,62 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     if (filteredProducts.isEmpty)
-                      _buildNoFilterResultsCard(theme, colorScheme)
+                      _buildNoFilterResultsCard()
                     else
-                      ...filteredProducts.map((p) => _buildProductCard(p, theme, colorScheme)),
+                      ...filteredProducts.map((p) => _buildProductCard(p)),
                   ] else ...[
-                    // Default Dashboard View
                     _buildSummaryMetrics(
                       total: products.length,
                       active: activeProducts.length,
                       expiring: expiringProducts.length,
                       expired: expiredProducts.length,
-                      theme: theme,
-                      colorScheme: colorScheme,
                     ),
                     const SizedBox(height: 24),
-
-                    // EXPIRING SOON SECTION
+                    if (expiringProducts.isNotEmpty) ...[
+                      _buildSectionHeader(
+                        title: 'Expiring Soon',
+                        count: expiringProducts.length,
+                        icon: Icons.warning_amber_rounded,
+                        accentColor: AppTheme.statusExpiringText,
+                      ),
+                      const SizedBox(height: 10),
+                      ...expiringProducts.map((p) => _buildProductCard(p)),
+                      const SizedBox(height: 20),
+                    ],
                     _buildSectionHeader(
-                      title: 'Expiring Soon',
-                      count: expiringProducts.length,
-                      icon: Icons.notification_important_rounded,
-                      iconColor: Colors.orange.shade800,
-                      theme: theme,
-                    ),
-                    const SizedBox(height: 8),
-                    if (expiringProducts.isEmpty)
-                      _buildEmptySectionCard(
-                        message: 'No products expiring soon',
-                        icon: Icons.check_circle_outline_rounded,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                      )
-                    else
-                      ...expiringProducts.map((p) => _buildProductCard(p, theme, colorScheme)),
-
-                    const SizedBox(height: 24),
-
-                    // ACTIVE PRODUCTS SECTION
-                    _buildSectionHeader(
-                      title: 'Active Products',
+                      title: 'Active Warranties',
                       count: activeProducts.length,
                       icon: Icons.verified_user_rounded,
-                      iconColor: Colors.green.shade700,
-                      theme: theme,
+                      accentColor: AppTheme.statusActiveText,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     if (activeProducts.isEmpty)
-                      _buildEmptySectionCard(
-                        message: 'No active warranties',
-                        icon: Icons.hourglass_empty_rounded,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                      )
+                      _buildEmptySectionCard('No active warranties currently registered.')
                     else
-                      ...activeProducts.map((p) => _buildProductCard(p, theme, colorScheme)),
-
-                    const SizedBox(height: 24),
-
-                    // RECENT PRODUCTS SECTION
+                      ...activeProducts.take(4).map((p) => _buildProductCard(p)),
+                    const SizedBox(height: 20),
                     _buildSectionHeader(
                       title: 'Recent Products',
                       count: recentProducts.length,
                       icon: Icons.history_rounded,
-                      iconColor: colorScheme.primary,
-                      theme: theme,
+                      accentColor: AppTheme.primary,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     if (recentProducts.isEmpty)
-                      _buildEmptySectionCard(
-                        message: 'No recent products',
-                        icon: Icons.inbox_outlined,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                      )
+                      _buildEmptySectionCard('No recent products found.')
                     else
                       ...recentProducts
                           .take(5)
-                          .map((p) => _buildProductCard(p, theme, colorScheme)),
+                          .map((p) => _buildProductCard(p)),
                   ],
-
-                  const SizedBox(height: 80), // Padding for floating action button
+                  const SizedBox(height: 84),
                 ],
               ),
             );
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -715,492 +1227,10 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
         tooltip: 'Add Product',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _buildSearchAndFilterBar(
-    List<Product> products,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final filterCount = _filter.activeFilterCount;
-
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by name or brand...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Badge(
-          isLabelVisible: filterCount > 0,
-          label: Text('$filterCount'),
-          child: IconButton.filledTonal(
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: 'Filter Products',
-            onPressed: () => _openFilterModal(products),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActiveFilterChips(ThemeData theme, ColorScheme colorScheme) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        if (_filter.searchQuery.trim().isNotEmpty)
-          Chip(
-            avatar: const Icon(Icons.search, size: 16),
-            label: Text('"${_filter.searchQuery.trim()}"'),
-            onDeleted: () => _searchController.clear(),
-            deleteIconColor: colorScheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
-        if (_filter.warrantyStatus != null)
-          Chip(
-            avatar: const Icon(Icons.shield_outlined, size: 16),
-            label: Text(_filter.warrantyStatus!.label),
-            onDeleted: () {
-              setState(() {
-                _filter = _filter.copyWith(warrantyStatus: () => null);
-              });
-            },
-            deleteIconColor: colorScheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
-        if (_filter.category != null)
-          Chip(
-            avatar: const Icon(Icons.category_outlined, size: 16),
-            label: Text(_filter.category!),
-            onDeleted: () {
-              setState(() {
-                _filter = _filter.copyWith(category: () => null);
-              });
-            },
-            deleteIconColor: colorScheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
-        if (_filter.brand != null)
-          Chip(
-            avatar: const Icon(Icons.branding_watermark_outlined, size: 16),
-            label: Text(_filter.brand!),
-            onDeleted: () {
-              setState(() {
-                _filter = _filter.copyWith(brand: () => null);
-              });
-            },
-            deleteIconColor: colorScheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
-        if (_filter.purchaseDateFrom != null || _filter.purchaseDateTo != null)
-          Chip(
-            avatar: const Icon(Icons.date_range_outlined, size: 16),
-            label: Text(
-              _filter.purchaseDateFrom != null && _filter.purchaseDateTo != null
-                  ? '${_formatDate(_filter.purchaseDateFrom!)} - ${_formatDate(_filter.purchaseDateTo!)}'
-                  : _filter.purchaseDateFrom != null
-                      ? 'From ${_formatDate(_filter.purchaseDateFrom!)}'
-                      : 'To ${_formatDate(_filter.purchaseDateTo!)}',
-            ),
-            onDeleted: () {
-              setState(() {
-                _filter = _filter.copyWith(
-                  purchaseDateFrom: () => null,
-                  purchaseDateTo: () => null,
-                );
-              });
-            },
-            deleteIconColor: colorScheme.onSurfaceVariant,
-            visualDensity: VisualDensity.compact,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildNoFilterResultsCard(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.filter_alt_off_outlined,
-            size: 48,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No products match your filters',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Try adjusting or resetting your search and filter criteria.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.tonalIcon(
-            onPressed: _resetAllFilters,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Reset All Filters'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryMetrics({
-    required int total,
-    required int active,
-    required int expiring,
-    required int expired,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricTile(
-            label: 'Active',
-            count: active,
-            color: Colors.green.shade700,
-            bgColor: Colors.green.shade50,
-            icon: Icons.verified_user_outlined,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildMetricTile(
-            label: 'Expiring',
-            count: expiring,
-            color: Colors.orange.shade800,
-            bgColor: Colors.orange.shade50,
-            icon: Icons.warning_amber_rounded,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildMetricTile(
-            label: 'Expired',
-            count: expired,
-            color: Colors.red.shade700,
-            bgColor: Colors.red.shade50,
-            icon: Icons.history_toggle_off_rounded,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricTile({
-    required String label,
-    required int count,
-    required Color color,
-    required Color bgColor,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 10.0),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader({
-    required String title,
-    required int count,
-    required IconData icon,
-    required Color iconColor,
-    required ThemeData theme,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 22, color: iconColor),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: iconColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptySectionCard({
-    required String message,
-    required IconData icon,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 12),
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductCard(
-    Product product,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final status = product.status;
-    final statusColor = _getStatusColor(status);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10.0),
-      elevation: 1.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDocuments(product),
-        child: Padding(
-          padding: const EdgeInsets.all(14.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: Product Name & Popup Menu
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.productName,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          product.brand.isNotEmpty
-                              ? '${product.brand} • ${product.category}'
-                              : product.category,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    tooltip: 'Product Options',
-                    onSelected: (value) {
-                      if (value == 'docs') {
-                        _openDocuments(product);
-                      } else if (value == 'edit') {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ProductFormScreen(
-                              productToEdit: product,
-                            ),
-                          ),
-                        );
-                      } else if (value == 'delete') {
-                        _confirmDelete(product);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'docs',
-                        child: Row(
-                          children: [
-                            Icon(Icons.folder_open_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('Documents / Bills'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const Divider(height: 16),
-
-              // Dates & Status
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Purchased: ${_formatDate(product.purchaseDate)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Expires: ${_formatDate(product.warrantyExpiryDate)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: statusColor.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Text(
-                      status.label,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Optional notes
-              if (product.notes != null && product.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Notes: ${product.notes}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
-          ),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Add Product',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
     );

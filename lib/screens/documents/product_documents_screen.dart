@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/product_document_model.dart';
 import '../../models/product_model.dart';
 import '../../services/document_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/empty_state_view.dart';
 import 'document_viewer_screen.dart';
 import 'ocr_scan_screen.dart';
 
@@ -41,15 +43,15 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.orange),
+        icon: const Icon(Icons.cloud_off_rounded, size: 44, color: AppTheme.statusExpiringText),
         title: const Text('Cloud Storage Unavailable'),
         content: const Text(
-          'Document upload is currently unavailable because Firebase Cloud Storage is not enabled for this project.\n\nCloud Storage requires the Firebase billing-enabled (Blaze) plan.',
+          'Document upload is currently unavailable because Firebase Cloud Storage is not enabled on the free Spark tier for this project.\n\nCloud Storage requires the Firebase billing-enabled (Blaze) plan.',
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+            child: const Text('Understand'),
           ),
         ],
       ),
@@ -59,22 +61,42 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
   void _showAddDocumentOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.document_scanner_outlined),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.folder_open_rounded, color: AppTheme.primary, size: 22),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Add Document to Vault',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ],
                   ),
-                  title: const Text('Scan & Extract Text (OCR)'),
-                  subtitle: const Text('Extract readable text from a bill or warranty card'),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.document_scanner_rounded, color: AppTheme.primary, size: 22),
+                  ),
+                  title: const Text('Scan & Extract Text (OCR)', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Extract readable text from bill or warranty card'),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     Navigator.of(context).push(
@@ -85,21 +107,31 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.camera_alt_outlined),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryContainer.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.camera_alt_outlined, color: AppTheme.secondary, size: 22),
                   ),
-                  title: const Text('Capture Document with Camera'),
-                  subtitle: const Text('Take a photo of bill or warranty card'),
+                  title: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Take a photo of physical invoice or warranty slip'),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _showStorageUnavailableNotice();
                   },
                 ),
                 ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.photo_library_outlined),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.photo_library_outlined, color: Color(0xFF2563EB), size: 22),
                   ),
-                  title: const Text('Select Image from Gallery'),
+                  title: const Text('Select Image from Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: const Text('Choose JPG / PNG receipt image'),
                   onTap: () {
                     Navigator.of(ctx).pop();
@@ -107,16 +139,22 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.picture_as_pdf_outlined),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFDC2626), size: 22),
                   ),
-                  title: const Text('Upload PDF Document'),
-                  subtitle: const Text('Select PDF invoice or warranty document'),
+                  title: const Text('Upload PDF Invoice', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Select digital PDF invoice or receipt'),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _showStorageUnavailableNotice();
                   },
                 ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -129,18 +167,19 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_outline_rounded, size: 40, color: Color(0xFFDC2626)),
         title: const Text('Delete Document'),
         content: Text(
-          'Are you sure you want to delete "${doc.fileName}"? This action cannot be undone.',
+          'Are you sure you want to delete "${doc.fileName}" from this product? This action cannot be undone.',
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
+              backgroundColor: const Color(0xFFDC2626),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Delete'),
@@ -157,9 +196,16 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document deleted successfully.'),
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text('Document removed from vault.'),
+                ],
+              ),
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -171,6 +217,7 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
               content: Text(errorMsg),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }
@@ -180,16 +227,16 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final product = widget.product;
+    final categoryIcon = AppTheme.getCategoryIcon(product.category);
 
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
-        title: Text('${product.productName} Documents'),
+        title: const Text('Product Documents'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.document_scanner_outlined),
+            icon: const Icon(Icons.document_scanner_outlined, size: 22),
             tooltip: 'Scan Document (OCR)',
             onPressed: () {
               Navigator.of(context).push(
@@ -199,27 +246,35 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
               );
             },
           ),
+          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Product summary header
+            // Product summary header card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
                 border: Border(
-                  bottom: BorderSide(color: colorScheme.outlineVariant),
+                  bottom: BorderSide(color: AppTheme.borderLight),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 32,
-                    color: colorScheme.primary,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryContainer.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      categoryIcon,
+                      size: 24,
+                      color: AppTheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -228,14 +283,23 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
                       children: [
                         Text(
                           product.productName,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          '${product.brand} • ${product.category}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                          product.brand.isNotEmpty
+                              ? '${product.brand} • ${product.category}'
+                              : product.category,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -245,26 +309,27 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
               ),
             ),
 
-            // Informational Banner regarding Cloud Storage status
+            // Informational Spark limitation banner
             Container(
-              margin: const EdgeInsets.all(16.0),
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.shade300),
+                color: AppTheme.statusExpiringBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.statusExpiringBorder),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.amber.shade900, size: 24),
-                  const SizedBox(width: 12),
+                  Icon(Icons.info_outline_rounded, color: AppTheme.statusExpiringText, size: 20),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Cloud Storage is not enabled on this Firebase plan. Document uploads are currently in view/readiness mode.',
+                      'Cloud Storage is disabled on the free Firebase Spark tier. Document management runs in readiness mode.',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.amber.shade900,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 12.5,
+                        color: AppTheme.statusExpiringText,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                       ),
                     ),
                   ),
@@ -287,7 +352,7 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
                         child: Text(
                           DocumentService.getReadableErrorMessage(snapshot.error),
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: colorScheme.error),
+                          style: const TextStyle(color: Color(0xFFDC2626)),
                         ),
                       ),
                     );
@@ -296,102 +361,92 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
                   final documents = snapshot.data ?? [];
 
                   if (documents.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.file_present_rounded,
-                              size: 72,
-                              color: colorScheme.primary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No Documents Attached',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Bills, invoices, and warranty documents for this product will appear here once Cloud Storage is enabled.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            FilledButton.icon(
-                              onPressed: _showAddDocumentOptions,
-                              icon: const Icon(Icons.cloud_upload_outlined),
-                              label: const Text('Add Document'),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return EmptyStateView(
+                      icon: Icons.folder_zip_outlined,
+                      title: 'No Documents Attached Yet',
+                      description:
+                          'Store invoices, receipts, and warranty cards for ${product.productName} in your digital vault.',
+                      actionLabel: 'Add Document / Invoice',
+                      actionIcon: Icons.add_photo_alternate_rounded,
+                      onAction: _showAddDocumentOptions,
                     );
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     itemCount: documents.length,
                     itemBuilder: (context, index) {
                       final doc = documents[index];
                       final isPdf = doc.isPdf;
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                          ),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.borderLight),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: 14,
+                            vertical: 6,
                           ),
-                          leading: CircleAvatar(
-                            backgroundColor: isPdf
-                                ? Colors.red.shade50
-                                : Colors.blue.shade50,
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isPdf ? const Color(0xFFFEF2F2) : const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             child: Icon(
                               isPdf
                                   ? Icons.picture_as_pdf_outlined
                                   : Icons.image_outlined,
                               color: isPdf
-                                  ? Colors.red.shade700
-                                  : Colors.blue.shade700,
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFF2563EB),
+                              size: 22,
                             ),
                           ),
                           title: Text(
                             doc.fileName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 3),
                               Text(
                                 '${doc.documentType} • ${_formatFileSize(doc.fileSizeBytes)}',
-                                style: theme.textTheme.bodySmall,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondary,
+                                ),
                               ),
                               if (doc.createdAt != null)
                                 Text(
-                                  'Uploaded: ${_formatDate(doc.createdAt)}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
+                                  'Added ${_formatDate(doc.createdAt)}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textMuted,
                                   ),
                                 ),
                             ],
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
                             tooltip: 'Delete Document',
                             onPressed: () => _confirmDeleteDocument(doc),
                           ),
@@ -421,8 +476,11 @@ class _ProductDocumentsScreenState extends State<ProductDocumentsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddDocumentOptions,
-        icon: const Icon(Icons.add_photo_alternate_outlined),
-        label: const Text('Add Document'),
+        icon: const Icon(Icons.add_photo_alternate_rounded),
+        label: const Text(
+          'Add Document',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
       ),
     );
   }

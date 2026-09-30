@@ -3,6 +3,8 @@ import '../../models/product_model.dart';
 import '../../services/notification_service.dart';
 import '../../services/ocr_service.dart';
 import '../../services/product_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/status_badge.dart';
 import '../documents/ocr_scan_screen.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -139,13 +141,22 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              populatedCount > 0
-                  ? 'Populated $populatedCount field(s) from document. Please review and verify.'
-                  : 'Document scanned. Please review details before saving.',
+            content: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    populatedCount > 0
+                        ? 'Populated $populatedCount field(s) from document. Please review and verify.'
+                        : 'Document scanned. Please review details before saving.',
+                  ),
+                ),
+              ],
             ),
-            backgroundColor: Colors.blue.shade700,
+            backgroundColor: AppTheme.primary,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -161,7 +172,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
 
     try {
-      // Request notification permission if any reminder is selected
       if (_selectedReminderIntervals.isNotEmpty) {
         await NotificationService().requestNotificationPermissions();
       }
@@ -181,7 +191,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         );
         await _productService.updateProduct(updated);
 
-        // Reschedule local reminders
         await NotificationService().rescheduleProductReminders(
           updated,
           reminderIntervals: _selectedReminderIntervals.toList(),
@@ -200,7 +209,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         final newProductId = await _productService.addProduct(newProduct);
         final savedProduct = newProduct.copyWith(id: newProductId);
 
-        // Schedule local reminders
         await NotificationService().scheduleProductReminders(
           savedProduct,
           reminderIntervals: _selectedReminderIntervals.toList(),
@@ -210,11 +218,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              isEditing ? 'Product updated successfully.' : 'Product added to vault.',
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  isEditing ? 'Product updated successfully.' : 'Product added to vault.',
+                ),
+              ],
             ),
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: AppTheme.statusActiveText,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
         Navigator.of(context).pop();
@@ -227,6 +242,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             content: Text(errorMsg),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -239,367 +255,500 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
-  Color _getStatusColor(WarrantyStatus status) {
-    switch (status) {
-      case WarrantyStatus.active:
-        return Colors.green.shade700;
-      case WarrantyStatus.expiringSoon:
-        return Colors.orange.shade800;
-      case WarrantyStatus.expired:
-        return Colors.red.shade700;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final expiryDate = _calculatedExpiryDate;
     final status = _calculatedStatus;
-    final statusColor = _getStatusColor(status);
 
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Product' : 'Add Product'),
+        title: Text(isEditing ? 'Edit Product' : 'Add Product to Vault'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.document_scanner_outlined),
+            icon: const Icon(Icons.document_scanner_outlined, size: 22),
             tooltip: 'Autofill with OCR',
             onPressed: _scanDocumentWithOcr,
           ),
+          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Quick Scan Document banner/button
-                OutlinedButton.icon(
-                  onPressed: _scanDocumentWithOcr,
-                  icon: const Icon(Icons.document_scanner_outlined),
-                  label: const Text('Scan Bill / Invoice with OCR'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                // Quick Scan Document Action Banner
+                Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _scanDocumentWithOcr,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                        color: AppTheme.primaryContainer.withValues(alpha: 0.4),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.document_scanner_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Scan Bill or Warranty Document',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Extract product name, dates & duration with OCR',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.primary),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                // Product Name
-                TextFormField(
-                  controller: _nameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Product Name *',
-                    hintText: 'e.g. MacBook Pro 14"',
-                    prefixIcon: Icon(Icons.devices_rounded),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter the product name.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Category Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Category *',
-                    prefixIcon: Icon(Icons.category_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: Product.defaultCategories.map((cat) {
-                    return DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedCategory = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Brand
-                TextFormField(
-                  controller: _brandController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Brand *',
-                    hintText: 'e.g. Apple, Samsung, Sony',
-                    prefixIcon: Icon(Icons.branding_watermark_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter the brand name.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Purchase Date Picker Field
-                InkWell(
-                  onTap: _selectPurchaseDate,
-                  borderRadius: BorderRadius.circular(10),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Purchase Date *',
-                      prefixIcon: Icon(Icons.calendar_today_outlined),
-                      suffixIcon: Icon(Icons.arrow_drop_down),
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Text(
-                      _formatDate(_selectedPurchaseDate),
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Warranty Duration Input & Quick Presets
-                Text(
-                  'Warranty Duration',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8.0,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('6 Months'),
-                      selected: _durationMonths == 6,
-                      onSelected: (_) => _setDuration(6),
-                    ),
-                    ChoiceChip(
-                      label: const Text('1 Year (12 Mo)'),
-                      selected: _durationMonths == 12,
-                      onSelected: (_) => _setDuration(12),
-                    ),
-                    ChoiceChip(
-                      label: const Text('2 Years (24 Mo)'),
-                      selected: _durationMonths == 24,
-                      onSelected: (_) => _setDuration(24),
-                    ),
-                    ChoiceChip(
-                      label: const Text('3 Years (36 Mo)'),
-                      selected: _durationMonths == 36,
-                      onSelected: (_) => _setDuration(36),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _durationController,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Duration in Months *',
-                    hintText: 'e.g. 12',
-                    prefixIcon: Icon(Icons.timer_outlined),
-                    suffixText: 'Months',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter warranty duration in months.';
-                    }
-                    final parsed = int.tryParse(value.trim());
-                    if (parsed == null || parsed <= 0) {
-                      return 'Please enter a valid positive number of months.';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
 
-                // Automatic Calculation Preview Card
+                // SECTION 1: PRODUCT INFORMATION
+                _buildSectionTitle('Product Information', Icons.info_outline_rounded),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colorScheme.outlineVariant),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderLight),
+                  ),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Product Name *',
+                          hintText: 'e.g. MacBook Pro 14"',
+                          prefixIcon: Icon(Icons.devices_rounded, size: 20),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter the product name.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _brandController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Brand *',
+                          hintText: 'e.g. Apple, Samsung, Sony',
+                          prefixIcon: Icon(Icons.branding_watermark_outlined, size: 20),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter the brand name.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Category *',
+                          prefixIcon: Icon(Icons.category_outlined, size: 20),
+                        ),
+                        items: Product.defaultCategories.map((cat) {
+                          return DropdownMenuItem(
+                            value: cat,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  AppTheme.getCategoryIcon(cat),
+                                  size: 18,
+                                  color: AppTheme.primary,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(cat),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedCategory = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // SECTION 2: PURCHASE & WARRANTY DURATION
+                _buildSectionTitle('Purchase & Warranty Duration', Icons.calendar_today_rounded),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderLight),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calculate_outlined,
-                            size: 20,
-                            color: colorScheme.primary,
+                      // Purchase Date Picker
+                      InkWell(
+                        onTap: _selectPurchaseDate,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Purchase Date *',
+                            prefixIcon: Icon(Icons.calendar_month_outlined, size: 20),
+                            suffixIcon: Icon(Icons.arrow_drop_down_rounded, size: 24),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Automatic Warranty Calculation',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
+                          child: Text(
+                            _formatDate(_selectedPurchaseDate),
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                      const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Expiry Date:'),
-                          Text(
-                            _formatDate(expiryDate),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Warranty Duration Presets',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: [
+                          _buildPresetChip('6 Months', 6),
+                          _buildPresetChip('1 Year (12 Mo)', 12),
+                          _buildPresetChip('2 Years (24 Mo)', 24),
+                          _buildPresetChip('3 Years (36 Mo)', 36),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _durationController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Duration in Months *',
+                          hintText: 'e.g. 12',
+                          prefixIcon: Icon(Icons.timer_outlined, size: 20),
+                          suffixText: 'Months',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter warranty duration in months.';
+                          }
+                          final parsed = int.tryParse(value.trim());
+                          if (parsed == null || parsed <= 0) {
+                            return 'Please enter a valid positive number of months.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // SECTION 3: AUTOMATIC WARRANTY CALCULATION SUMMARY
+                _buildSectionTitle('Warranty Calculation Summary', Icons.calculate_outlined),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Status:'),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-                            ),
-                            child: Text(
-                              status.label,
-                              style: TextStyle(
-                                color: statusColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                          const Row(
+                            children: [
+                              Icon(Icons.event_outlined, size: 16, color: AppTheme.textSecondary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Purchase Date:',
+                                style: TextStyle(fontSize: 13.5, color: AppTheme.textSecondary),
                               ),
+                            ],
+                          ),
+                          Text(
+                            _formatDate(_selectedPurchaseDate),
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
                             ),
                           ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: AppTheme.borderLight),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.event_available_rounded, size: 16, color: AppTheme.primary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Calculated Expiry:',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            _formatDate(expiryDate),
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: AppTheme.borderLight),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.shield_outlined, size: 16, color: AppTheme.textSecondary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Vault Status:',
+                                style: TextStyle(fontSize: 13.5, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
+                          StatusBadge(status: status),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Expiry Reminders
-                Text(
-                  'Warranty Expiry Reminders',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                // SECTION 4: WARRANTY EXPIRY REMINDERS
+                _buildSectionTitle('Warranty Expiry Reminders', Icons.notifications_active_outlined),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderLight),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select when you want to receive local device notifications before warranty expiration:',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: AppTheme.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: [
+                          _buildReminderChip('30 Days Before', 30),
+                          _buildReminderChip('15 Days Before', 15),
+                          _buildReminderChip('7 Days Before', 7),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8.0,
-                  children: [
-                    FilterChip(
-                      label: const Text('30 Days Before'),
-                      selected: _selectedReminderIntervals.contains(30),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedReminderIntervals.add(30);
-                          } else {
-                            _selectedReminderIntervals.remove(30);
-                          }
-                        });
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('15 Days Before'),
-                      selected: _selectedReminderIntervals.contains(15),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedReminderIntervals.add(15);
-                          } else {
-                            _selectedReminderIntervals.remove(15);
-                          }
-                        });
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('7 Days Before'),
-                      selected: _selectedReminderIntervals.contains(7),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedReminderIntervals.add(7);
-                          } else {
-                            _selectedReminderIntervals.remove(7);
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Notes / Other Details
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 3,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes / Other Details (Optional)',
-                    hintText: 'e.g. Serial number, retailer name, or warranty terms',
-                    prefixIcon: Icon(Icons.notes_rounded),
-                    border: OutlineInputBorder(),
+                // SECTION 5: NOTES & DETAILS
+                _buildSectionTitle('Additional Details (Optional)', Icons.notes_rounded),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderLight),
+                  ),
+                  child: TextFormField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes, Serial Number, or Retailer Details',
+                      hintText: 'e.g. Serial #SN-92841, Retailer: BestBuy, Covered against hardware faults',
+                      alignLabelWithHint: true,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-                // Save Button
+                // Primary Save Button
                 FilledButton(
                   onPressed: _isSaving ? null : _saveProduct,
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                   child: _isSaving
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                            strokeWidth: 2.2,
                             color: Colors.white,
                           ),
                         )
                       : Text(
-                          isEditing ? 'Update Product' : 'Add to Vault',
+                          isEditing ? 'Update Product Details' : 'Save Product to Vault',
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPresetChip(String label, int months) {
+    final isSelected = _durationMonths == months;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => _setDuration(months),
+      selectedColor: AppTheme.primaryContainer,
+      labelStyle: TextStyle(
+        fontSize: 12.5,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
+      ),
+      side: BorderSide(
+        color: isSelected ? AppTheme.primary : AppTheme.borderLight,
+      ),
+    );
+  }
+
+  Widget _buildReminderChip(String label, int days) {
+    final isSelected = _selectedReminderIntervals.contains(days);
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          if (selected) {
+            _selectedReminderIntervals.add(days);
+          } else {
+            _selectedReminderIntervals.remove(days);
+          }
+        });
+      },
+      selectedColor: AppTheme.secondaryContainer.withValues(alpha: 0.6),
+      checkmarkColor: AppTheme.secondary,
+      labelStyle: TextStyle(
+        fontSize: 12.5,
+        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        color: isSelected ? AppTheme.secondary : AppTheme.textPrimary,
+      ),
+      side: BorderSide(
+        color: isSelected ? AppTheme.secondary : AppTheme.borderLight,
       ),
     );
   }
