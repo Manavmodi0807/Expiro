@@ -75,7 +75,7 @@ class AppTheme {
         backgroundColor: surface,
         foregroundColor: textPrimary,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: textPrimary,

@@ -807,26 +807,27 @@ class _HomeScreenState extends State<HomeScreen> {
     final categoryIcon = AppTheme.getCategoryIcon(product.category);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10.0),
+      margin: const EdgeInsets.only(bottom: 12.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderLight),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Color(0x08000000),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
           onTap: () => _openDocuments(product),
           child: Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: const EdgeInsets.all(15.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -836,7 +837,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryContainer.withValues(alpha: 0.7),
+                        color: AppTheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -927,52 +928,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(color: AppTheme.borderLight),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textMuted),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Purchased: ${_formatDate(product.purchaseDate)}',
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                color: AppTheme.textSecondary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textMuted),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Purchased: ${_formatDate(product.purchaseDate)}',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: AppTheme.textSecondary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(Icons.event_available_outlined, size: 13, color: AppTheme.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Expires: ${_formatDate(product.warrantyExpiryDate)}',
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.event_available_outlined, size: 13, color: AppTheme.textSecondary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Expires: ${_formatDate(product.warrantyExpiryDate)}',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     StatusBadge(status: status),
                   ],
                 ),
                 if (product.notes != null && product.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppTheme.scaffoldBackground,
                       borderRadius: BorderRadius.circular(8),
