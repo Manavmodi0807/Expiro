@@ -931,7 +931,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 14),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Column(
@@ -940,27 +940,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           Row(
                             children: [
                               const Icon(Icons.calendar_today_outlined, size: 13, color: AppTheme.textMuted),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Purchased: ${_formatDate(product.purchaseDate)}',
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  color: AppTheme.textSecondary,
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  'Purchased: ${_formatDate(product.purchaseDate)}',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Row(
                             children: [
                               const Icon(Icons.event_available_outlined, size: 13, color: AppTheme.textSecondary),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Expires: ${_formatDate(product.warrantyExpiryDate)}',
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  'Expires: ${_formatDate(product.warrantyExpiryDate)}',
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -968,7 +976,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    StatusBadge(status: status),
+                    const SizedBox(width: 8),
+                    StatusBadge(status: status, isCompact: true),
                   ],
                 ),
                 if (product.notes != null && product.notes!.isNotEmpty) ...[
