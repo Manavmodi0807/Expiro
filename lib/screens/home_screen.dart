@@ -1025,16 +1025,13 @@ class _HomeScreenState extends State<HomeScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.shield_rounded,
-                size: 20,
-                color: AppTheme.primary,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/icon/expiro_logo.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
               ),
             ),
             const SizedBox(width: 10),

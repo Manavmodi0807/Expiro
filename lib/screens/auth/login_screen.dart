@@ -85,22 +85,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   // App Branding & Vault Icon Badge
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                            color: AppTheme.primary.withValues(alpha: 0.12),
+                            blurRadius: 18,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.shield_rounded,
-                        size: 48,
-                        color: AppTheme.primary,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Image.asset(
+                          'assets/icon/expiro_logo.png',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),

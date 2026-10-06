@@ -93,15 +93,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // App Branding
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.secondaryContainer.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withValues(alpha: 0.12),
+                            blurRadius: 18,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.verified_user_rounded,
-                        size: 42,
-                        color: AppTheme.secondary,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Image.asset(
+                          'assets/icon/expiro_logo.png',
+                          width: 76,
+                          height: 76,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
