@@ -127,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.logout_rounded, size: 36, color: AppTheme.primary),
         title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out of Digital Warranty Vault?'),
+        content: const Text('Are you sure you want to log out of Expiro?'),
         actions: [
           OutlinedButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -1038,7 +1038,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            const Text('Digital Warranty Vault'),
+            const Text('Expiro'),
           ],
         ),
         actions: [

@@ -116,7 +116,7 @@ void main() {
         brand: 'Apple',
         purchaseDate: DateTime(2025, 10, 5),
         warrantyDurationMonths: 12,
-        warrantyExpiryDate: DateTime(2026, 10, 5), // Expiring soon relative to late Sept 2026
+        warrantyExpiryDate: DateTime.now().add(const Duration(days: 15)), // Expiring soon
       ),
       Product(
         id: 'p3',

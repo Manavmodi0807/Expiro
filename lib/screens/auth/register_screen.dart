@@ -107,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Join Digital Warranty Vault',
+                    'Join Expiro',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 22,
